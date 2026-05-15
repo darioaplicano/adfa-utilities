@@ -1,0 +1,45 @@
+name: Auto README
+
+on:
+  push:
+    branches: [development]
+    paths-ignore:
+      - 'README.md'
+      - '.github/**'
+      - 'docs/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  models: read
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Generar README
+        run: node .github/scripts/generate-readme.mjs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Abrir PR con el nuevo README
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: 'docs: regenerar README automáticamente'
+          branch: auto/readme-update
+          base: development
+          title: 'docs: actualizar README'
+          body: |
+            README regenerado automáticamente tras el último push a `development`.
+            Revisa los cambios antes de mergear.
+          delete-branch: true
+          labels: documentation, automated
